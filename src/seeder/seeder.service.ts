@@ -4,6 +4,7 @@ import { Repository }          from 'typeorm';
 import { Location } from '../locations/entities/location.entity';
 import { User }     from '../users/entities/user.entity';
 import { Animal }   from '../animals/entities/animal.entity';
+import { AdoptionRequest } from '../adoption-requests/entities/adoption-request.entity';
 
 @Injectable()
 export class SeederService {
@@ -16,6 +17,8 @@ export class SeederService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(Animal)
     private readonly animalRepo: Repository<Animal>,
+    @InjectRepository(AdoptionRequest)
+    private readonly requestRepo: Repository<AdoptionRequest>,
   ) {}
 
   async seed() {
@@ -92,18 +95,29 @@ export class SeederService {
         location: locations[2], registeredBy: users[3] },
     ]);
     this.logger.log(`  ✓ ${animals.length} animales`);
+
+    // ── 4. Adoption Requests ──────────────────────────────────
+    const requests = await this.requestRepo.save([
+      { user: users[1], animal: animals[0], message: 'Tengo patio grande y experiencia con labradores', status: 'pendiente' },
+      { user: users[2], animal: animals[2], message: 'Soy amante de los gatos siameses', status: 'aprobada' },
+      { user: users[3], animal: animals[6], message: 'Familia con dos niños, casa amplia', status: 'pendiente' },
+      { user: users[4], animal: animals[5], message: 'Busco un gatito joven', status: 'rechazada' },
+    ]);
+    this.logger.log(`  ✓ ${requests.length} solicitudes de adopción`);
+
     this.logger.log('─────────────────────────────────────────');
     this.logger.log(
-      `Seed completo → ${animals.filter(a => a.estado === 'disponible').length} disponibles · ${animals.filter(a => a.estado === 'adoptado').length} adoptados`
+      `Seed completo → ${animals.filter(a => a.estado === 'disponible').length} disponibles · ${animals.filter(a => a.estado === 'adoptado').length} adoptados · ${requests.length} solicitudes`
     );
   }
 
   async clearAndSeed() {
     this.logger.warn('Limpiando tablas en orden (FK constraints)...');
+    await this.requestRepo.query('DELETE FROM adoption_requests');
     await this.animalRepo.query('DELETE FROM user_animal_favorites');
-    await this.animalRepo.delete({});
-    await this.userRepo.delete({});
-    await this.locationRepo.delete({});
+    await this.animalRepo.query('DELETE FROM animals');
+    await this.userRepo.query('DELETE FROM users');
+    await this.locationRepo.query('DELETE FROM locations');
     this.logger.log('Tablas vaciadas. Iniciando seed...');
     await this.seed();
   }
