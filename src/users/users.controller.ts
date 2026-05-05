@@ -8,29 +8,45 @@ import {
   Delete,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiOperation({ summary: 'Crear un usuario' })
+  @ApiResponse({ status: 201, description: 'Usuario creado' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 409, description: 'Email ya registrado' })
   @Post()
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 
+  @ApiOperation({ summary: 'Listar todos los usuarios' })
+  @ApiResponse({ status: 200, description: 'Array de usuarios' })
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
+  @ApiOperation({ summary: 'Obtener un usuario por UUID' })
+  @ApiParam({ name: 'id', type: String, description: 'UUID del usuario' })
+  @ApiResponse({ status: 200, description: 'Usuario encontrado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
+  @ApiOperation({ summary: 'Actualizar un usuario' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Usuario actualizado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -39,6 +55,10 @@ export class UsersController {
     return this.usersService.update(id, dto);
   }
 
+  @ApiOperation({ summary: 'Eliminar un usuario' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Usuario eliminado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);
@@ -46,11 +66,19 @@ export class UsersController {
 
   // ── ManyToMany: Favoritos ──────────────────────────────
 
+  @ApiOperation({ summary: 'Listar animales favoritos del usuario' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Array de animales favoritos' })
   @Get(':id/favorites')
   getFavorites(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.getFavorites(id);
   }
 
+  @ApiOperation({ summary: 'Agregar un animal a favoritos' })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiParam({ name: 'animalId', type: String })
+  @ApiResponse({ status: 201, description: 'Favorito agregado' })
+  @ApiResponse({ status: 404, description: 'Usuario o animal no encontrado' })
   @Post(':userId/favorites/:animalId')
   addFavorite(
     @Param('userId', ParseUUIDPipe) userId: string,
@@ -59,6 +87,11 @@ export class UsersController {
     return this.usersService.addFavorite(userId, animalId);
   }
 
+  @ApiOperation({ summary: 'Remover un animal de favoritos' })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiParam({ name: 'animalId', type: String })
+  @ApiResponse({ status: 200, description: 'Favorito removido' })
+  @ApiResponse({ status: 404, description: 'Usuario o animal no encontrado' })
   @Delete(':userId/favorites/:animalId')
   removeFavorite(
     @Param('userId', ParseUUIDPipe) userId: string,

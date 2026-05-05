@@ -13,6 +13,7 @@ import { User } from '../users/entities/user.entity';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { QueryAnimalsDto } from './dto/query-animals.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class AnimalsService {
@@ -25,7 +26,18 @@ export class AnimalsService {
     private readonly locationRepo: Repository<Location>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
+
+  async uploadImagen(id: string, file: Express.Multer.File): Promise<Animal> {
+    await this.findOne(id);
+    const url = await this.cloudinaryService.uploadBuffer(
+      file.buffer,
+      'animales-adopcion',
+    );
+    await this.animalRepo.update(id, { imagen: url });
+    return this.findOne(id);
+  }
 
   async create(dto: CreateAnimalDto) {
     try {
